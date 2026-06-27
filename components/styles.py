@@ -17,7 +17,7 @@ def load_css():
 
     /* Sidebar Text */
     section[data-testid="stSidebar"]{
-        background-color:#FFFFFF;
+        background-color:#1F1F1F;
         border-right:1px solid #EAEAEA;
         width:280px !important;
     }

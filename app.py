@@ -17,7 +17,6 @@ from analytics.kpi import calculate_kpis
 from analytics.trend_analysis import get_monthly_sales
 
 from components.styles import load_css
-from components.sidebar import render_sidebar
 from components.kpi_cards import render_kpi_cards
 
 from sections.upload import render_upload_section
@@ -30,7 +29,62 @@ from sections.category_insights import render_category_insights
 
 
 load_css()
-render_sidebar()
+
+st.markdown(f"""
+<div style="
+text-align:right;
+color:#6B7280;
+font-size:16px;
+font-weight:600;
+margin-bottom:15px;
+">
+Last Updated • {pd.Timestamp.today().strftime("%d %b %Y")}
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="
+background:linear-gradient(
+135deg,
+#DCEBFA 0%,
+#E8DDF9 100%
+);
+padding:45px;
+border-radius:40px;
+width:100%;
+box-shadow:0px 10px 25px rgba(0,0,0,0.04);
+margin-bottom:35px;
+">
+
+<div style="
+color:#24324A;
+font-size:78px;
+font-weight:800;
+line-height:1;
+">
+BusinessPulse AI
+</div>
+
+<div style="
+color:#4B5563;
+font-size:26px;
+font-weight:600;
+margin-top:25px;
+">
+Analytics & Insights Dashboard
+</div>
+
+<div style="
+color:#6B7280;
+font-size:18px;
+margin-top:15px;
+">
+AI-Powered Business Intelligence Platform
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
 
 # =====================================
 # FILE UPLOAD
@@ -65,8 +119,93 @@ df = pd.read_csv(
     encoding="latin1"
 )
 
-kpis = calculate_kpis(df)
+# =====================================
+# FILTERS
+# =====================================
 
+st.markdown("""
+<h2 style="
+color:#24324A;
+font-size:30px;
+font-weight:700;
+margin-top:25px;
+margin-bottom:20px;
+">
+Filters
+</h2>
+""", unsafe_allow_html=True)
+
+with st.container():
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        region = st.selectbox(
+            "Region",
+            ["All"] + sorted(df["Region"].unique().tolist())
+        )
+
+    with c2:
+        category = st.selectbox(
+            "Category",
+            ["All"] + sorted(df["Category"].unique().tolist())
+        )
+
+    with c3:
+        segment = st.selectbox(
+            "Segment",
+            ["All"] + sorted(df["Segment"].unique().tolist())
+        )
+
+    with c4:
+        years = sorted(
+            pd.to_datetime(df["Order Date"])
+            .dt.year
+            .unique()
+            .tolist()
+        )
+
+        year = st.selectbox(
+            "Year",
+            ["All"] + years
+        )
+
+# =====================================
+# APPLY FILTERS
+# =====================================
+
+filtered_df = df.copy()
+
+if region != "All":
+    filtered_df = filtered_df[
+        filtered_df["Region"] == region
+    ]
+
+if category != "All":
+    filtered_df = filtered_df[
+        filtered_df["Category"] == category
+    ]
+
+if segment != "All":
+    filtered_df = filtered_df[
+        filtered_df["Segment"] == segment
+    ]
+
+if year != "All":
+
+    filtered_df["Order Date"] = pd.to_datetime(
+        filtered_df["Order Date"]
+    )
+
+    filtered_df = filtered_df[
+        filtered_df["Order Date"].dt.year == year
+    ]
+
+# =====================================
+# KPI DATA
+# =====================================
+
+kpis = calculate_kpis(filtered_df)
 # KPI Values
 
 revenue = f"${kpis['Revenue']/1000000:.2f}M"
@@ -88,7 +227,7 @@ render_kpi_cards(
 # REVENUE TREND
 # =====================================
 
-monthly_sales = get_monthly_sales(df)
+monthly_sales = get_monthly_sales(filtered_df)
 
 fig = px.line(
     monthly_sales,
@@ -184,7 +323,7 @@ render_business_health()
 # CATEGORY ANALYSIS
 # =====================================
 
-category_profit = render_category_analysis(df)
+category_profit = render_category_analysis(filtered_df)
 
 
 # =====================================
